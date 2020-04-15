@@ -95,7 +95,7 @@ class Category:
                 }  for cat in self]
 
     
-    def add(self, name = None, description = "", parent_id = None):
+    def add(self, name = None, description = "", parent_id = None, parent_name = None):
         """
         Create a new Category object and add it to the parent with parent_id uuid
         if no parent is specified, the new object is added to the current object children
@@ -112,13 +112,13 @@ class Category:
         if self.search_by_name(name) is not None:
             log(f"Node with same name '{name}' already exist", 1)
             return None
-        if parent_id is None:
+        if parent_id is None and parent_name is None:
             new_category = Category(name = name, description = description, parent_id = self.category_id)
             new_category.depth = self.depth + 1
             self.children.append(new_category)
             log(f"Added node '{name}', '{new_category.category_id}'")
             return new_category
-        else:
+        elif parent_id is not None:
             parent = self.search(parent_id)
             if parent is None:
                 log(f"Parent Node with id '{parent_id}' not found", 1)
@@ -127,6 +127,15 @@ class Category:
             else:
                 
                 return parent.add(name, description, None)
+        elif parent_name is not None:
+            parent = self.search_by_name(parent_name)
+            if parent is None:
+                log(f"Parent Node with name '{parent_name}' not found", 1)
+                return None
+                
+            else:
+                
+                return parent.add(name, description, None)            
     
     def __iter__(self):
         """
