@@ -75,7 +75,13 @@ class TestCategory:
         assert cat1.add("incidents") is None
         
     def test_add_parent_not_found(self):
-        cat1 = Category("incidents")
-        
+        cat1 = Category("incidents")       
         assert cat1.add("test","test","00000") is None
         
+    def test_add_by_name(self):
+        cat1 = Category("incidents") 
+        cat1.add("toto", "toto")
+        cat1.add("test","test")
+        new_cat = cat1.add("child2_test","", parent_name = "test")
+        assert new_cat is not None
+        assert new_cat.parent_id == cat1.children[1].category_id 
