@@ -3,7 +3,7 @@ from referential.category import Category
 class TestCategory:
     
     def test_init(self):
-        assert Category("Space Management").category_name == "Space Management"
+        assert Category("Space Management").category_name == "spaceManagement"
        
     def test_iter(self):
         cat1 = Category("incidents")
@@ -25,7 +25,7 @@ class TestCategory:
     def test_add_root(self):
         cat1 = Category("incidents")
         assert cat1.add("space management") is not None
-        assert cat1.children[0].category_name == "space management"
+        assert cat1.children[0].category_name == "spaceManagement"
         
         
                 
@@ -58,8 +58,8 @@ class TestCategory:
         cat1 = Category("incidents")
         cat1.add("space management")
         cat1.add("user management")
-        assert cat1.search_by_name("user management") == cat1.children[1]
-        assert cat1.search_by_name("space management") == cat1.children[0]
+        assert cat1.search_by_name("incidents__userManagement") == cat1.children[1]
+        assert cat1.search_by_name("incidents__spaceManagement") == cat1.children[0]
         
 
     def test_search_by_name_none(self):
@@ -82,6 +82,9 @@ class TestCategory:
         cat1 = Category("incidents") 
         cat1.add("toto", "toto")
         cat1.add("test","test")
-        new_cat = cat1.add("child2_test","", parent_name = "test")
+        print(cat1)
+        print(cat1.children[0])
+        print(cat1.children[1])
+        new_cat = cat1.add("child2_test","", parent_full_name = "incidents__test")
         assert new_cat is not None
         assert new_cat.parent_id == cat1.children[1].category_id 
