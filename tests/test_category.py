@@ -4,6 +4,7 @@ class TestCategory:
     
     def test_init(self):
         assert Category("Space Management").category_name == "spaceManagement"
+        assert Category("Space Management").category_full_name == "spaceManagement"
        
     def test_iter(self):
         cat1 = Category("incidents")
@@ -72,8 +73,37 @@ class TestCategory:
     def test_add_already_exist(self):
         cat1 = Category("incidents")
         cat1.add("incidents")
-        assert cat1.add("incidents") is None
+        assert cat1.add("incidents") is cat1.children[0]
         
+    def test_add_already_exist_2(self):
+        cat1 = Category("incidents")
+        child1 = cat1.add("test",parent_full_name="incidents")
+        assert child1
+        assert cat1.add("test",parent_full_name="incidents") == child1  
+
+    def test_add_already_exist_3(self):
+        cat1 = Category("incidents")
+        cat1.add("toto",parent_full_name="incidents")
+        cat1.add("test",parent_full_name="incidents")
+        child = cat1.add("tata",parent_full_name="incidents__test")
+        assert child
+        assert cat1.add("tata",parent_full_name="incidents__test") == child 
+        
+    def test_add_already_exist_4(self):
+        cat1 = Category("incidents")
+        cat1.add("toto",parent_full_name="incidents")
+        cat1.add("test",parent_full_name="incidents")
+        child = cat1.add("tata titi",parent_full_name="incidents__test")
+        assert child
+        assert cat1.add("tata titi",parent_full_name="incidents__test") == child   
+        
+    def test_add_already_exist_5(self):
+        cat1 = Category("incidents")
+        cat1.add("toto",parent_full_name="incidents")
+        cat1.add("test",parent_full_name="incidents")
+        assert cat1.add("tata titi",parent_full_name="incidents__test")
+        assert cat1.add("tata titi",parent_full_name="incidents__toto")     
+                
     def test_add_parent_not_found(self):
         cat1 = Category("incidents")       
         assert cat1.add("test","test","00000") is None
@@ -87,4 +117,16 @@ class TestCategory:
         print(cat1.children[1])
         new_cat = cat1.add("child2_test","", parent_full_name = "incidents__test")
         assert new_cat is not None
-        assert new_cat.parent_id == cat1.children[1].category_id 
+        assert new_cat.parent_id == cat1.children[1].category_id
+        
+    def test_add_full_name_1(self):
+        cat1 = Category("root")
+        assert cat1.add("root__incidents").category_name == "incidents"
+        
+        assert cat1.add("root__requests").category_name == "requests"
+        
+    def test_add_full_name_2(self):
+        cat1 = Category("root")
+        assert cat1.add("root__incidents").category_name == "incidents"
+        
+        assert cat1.add("root__incidents__space").category_name == "space"

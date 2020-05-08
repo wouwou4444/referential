@@ -25,8 +25,10 @@ class Category:
             if parent_id is category_id the node is the Root Node of the referential
             depth is 0 by default for the root node
         """
+        if name is None:
+            raise Exception(f"mandatory name parameter is missing")
         if not Category.check_valid_name(name):
-           raise Exception("mandatory name parameter is missing or can't be used")
+           raise Exception(f"name {name} can't be used or contains forbidden characters")
         else:
             name = Category.format_name(name)
             self.category_id = str(uuid.uuid4())
@@ -74,7 +76,10 @@ class Category:
         return the object Category whose name matches or return None
         name : a string to match in the given category tree
         """
+        
+        #log(f"looking for name {full_name} in {self.category_full_name}")
         if self.category_full_name == full_name:
+            log(f"match found for {full_name}")
             return self
         elif len(self.children) == 0:
             return None
@@ -103,7 +108,7 @@ class Category:
     
     def export(self, depth = -1, format = "csv"):
         """
-        Export the tree in csv format using depth to limit the export from the given node
+        Export the tree in a list of dictionnaries format using depth to limit the export from the given node
         depth : number how level to display from the given node
             -1 indicates to display everything until the end
             0 displays only the current node
@@ -116,7 +121,37 @@ class Category:
                  'digest': cat.digest
                 }  for cat in self]
 
-    
+    def dump(self, depth = -1, format = "csv"):
+        """
+        Export the tree in a list of category_full_name
+        using depth to limit the export from the given node
+        depth : number how level to display from the given node
+            -1 indicates to display everything until the end
+            0 displays only the current node
+        """
+        return [cat.category_full_name  for cat in self]
+
+    def dump2(self, depth = -1, format = "csv"):
+        """
+        Export the tree in a list of tuples(category_name, category_full_name)
+        using depth to limit the export from the given node
+        depth : number how level to display from the given node
+            -1 indicates to display everything until the end
+            0 displays only the current node
+        """
+        return [(cat.category_name, cat.category_full_name)  for cat in self]
+
+    def load_from_file(self, file_path = None):
+        """
+        create a Category object with the file entries as specifier for categories
+        
+        """
+        with open(file_path) as f:
+            list = [item.strip().split(",")[0] for item in f.readlines()]
+        for item in list:
+            self.add(item)
+        
+   
     def add(self, name = None, description = "", parent_id = None, parent_full_name = None):
         """
         Create a new Category object and add it to the parent with parent_id uuid
@@ -131,35 +166,64 @@ class Category:
         ####   TO DO
         ####
         
-        if (parent_id is None) and (parent_full_name is None)  and (self.search_by_name(f"{self.category_full_name}__{name}") is not None):
-            log(f"Node with same name '{name}' already exist in {self.category_full_name}", 1)
-            return None
         
-        if parent_id is None and parent_full_name is None:
-            new_category = Category(name = name, description = description, parent_id = self.category_id, parent_full_name = self.category_full_name)
-            new_category.depth = self.depth + 1
-            self.children.append(new_category)
-            log(f"Added node '{name}, {new_category.category_full_name}', '{new_category.category_id}'")
-            return new_category
-        elif parent_id is not None:
-            parent = self.search(parent_id)
-            if parent is None:
-                log(f"Parent Node with id '{parent_id}' not found", 1)
-                return None
-                
-            else:
-                
-                return parent.add(name, description, None)
+        ##### Name contains __
+        
+        if "__" in name:
+            chain = name.split("__")
+            log(f"in case 1: {name}, {chain} in {self.category_full_name}")
             
-        elif parent_full_name is not None:
-            parent = self.search_by_name(parent_full_name)
-            if parent is None:
-                log(f"Parent Node with name '{parent_full_name}' not found", 1)
-                return None
-                
+            full_name = chain[0]
+            if self.category_full_name == Category.format_name(full_name):
+                return self.add("__".join(chain[1:]))
             else:
+                node = self.add(full_name)
+                return node.add("__".join(chain[1:]))
                 
-                return parent.add(name, description, None)            
+        
+        ##### Name doesn't contain __
+        
+        else:
+            log(f"in case 2: {name}, {parent_id}, {parent_full_name} in  {self.category_full_name}")
+            node = self.search_by_name(f"{self.category_full_name}__{Category.format_name(name)}")
+            if (parent_id is None) and (parent_full_name is None)  and \
+            ( node is not None):
+                log(f"Node with same name '{name}', \
+                full_name:{self.category_full_name}__{Category.format_name(name)} \
+                already exist in {self.category_full_name}", 1)
+                return node
+
+            if parent_id is None and parent_full_name is None:
+                try:
+                    new_category = Category(name = name, description = description, 
+                                            parent_id = self.category_id, parent_full_name = self.category_full_name)
+                    new_category.depth = self.depth + 1
+                    self.children.append(new_category)
+                    log(f"Added node '{name}, {new_category.category_full_name}', '{new_category.category_id}'")
+                    return new_category
+                except Exception as e:
+                    log(f"an exception {type(e)} occured: {e}")
+                    return None
+            elif parent_id is not None:
+                parent = self.search(parent_id)
+                if parent is None:
+                    log(f"Parent Node with id '{parent_id}' not found", 1)
+                    return None
+
+                else:
+
+                    return parent.add(name, description, None)
+
+            elif parent_full_name is not None:
+                parent = self.search_by_name(parent_full_name)
+                if parent is None:
+                    log(f"Parent Node with name '{parent_full_name}' not found", 1)
+                    return None
+
+                else:
+
+                    return parent.add(name, description, None)            
+    
     
     def __iter__(self):
         """
@@ -167,9 +231,9 @@ class Category:
         """
         yield self
         if self.children is not None:
-            log("inside __iter__")
+            #log("__iter__::")
             for category in self.children:
-                log("looping child")
+                #log("__iter__:: looping child")
                 for cat in category.__iter__():
                     yield cat
             
