@@ -141,6 +141,16 @@ class Category:
         """
         return [(cat.category_name, cat.category_full_name)  for cat in self]
 
+    def dump3(self, depth = -1, format = "csv"):
+        """
+        Export the tree in a list of tuples(category_name, category_full_name)
+        using depth to limit the export from the given node
+        depth : number how level to display from the given node
+            -1 indicates to display everything until the end
+            0 displays only the current node
+        """
+        return [(cat.category_name, cat.category_full_name, cat.depth)  for cat in self]
+
     def load_from_file(self, file_path = None):
         """
         create a Category object with the file entries as specifier for categories
